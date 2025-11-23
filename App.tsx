@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { OutputCard } from './components/OutputCard';
 import { HistoryList } from './components/HistoryList';
@@ -23,12 +23,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  const { addToHistory, initializeApiKeys, getCurrentApiKey, cycleApiKey, getTotalApiKeysCount, currentApiKeyIndex } = usePromptStore();
-
-  useEffect(() => {
-    // Initialize API keys from process.env.API_KEY when the component mounts
-    initializeApiKeys();
-  }, [initializeApiKeys]);
+  const { addToHistory, getCurrentApiKey, cycleApiKey, getTotalApiKeysCount } = usePromptStore();
 
   const handleGenerate = async () => {
     if (!input.trim()) return;
@@ -39,7 +34,7 @@ export default function App() {
     const totalKeys = getTotalApiKeysCount();
     if (totalKeys === 0) {
       setStatus(AppStatus.ERROR);
-      setError("Không có API Key nào được cấu hình. Mở Cài đặt (biểu tượng bánh răng) để xem hướng dẫn.");
+      setError("Không có API Key nào được cấu hình. Mở Cài đặt (biểu tượng bánh răng) để thêm key của bạn.");
       return;
     }
 
@@ -81,8 +76,6 @@ export default function App() {
       <SettingsModal 
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)}
-        totalKeys={getTotalApiKeysCount()}
-        currentIndex={currentApiKeyIndex}
       />
 
       <main className="flex-1 flex overflow-hidden relative">

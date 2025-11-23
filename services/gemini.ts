@@ -43,10 +43,16 @@ export const generateCinematicPrompt = async (
   let attempt = 0;
   let lastError: Error | undefined;
 
+  // If there are no keys, don't even try.
+  if (totalApiKeysCount === 0) {
+    throw new Error("Không có API Key nào được cấu hình. Vui lòng thêm key của bạn trong phần Cài đặt.");
+  }
+
   while (attempt < totalApiKeysCount) {
     const apiKey = getApiKey();
     if (!apiKey) {
-      throw new Error("Không có API Key nào được cấu hình. Vui lòng thiết lập biến môi trường process.env.API_KEY.");
+       // This case should be rare if totalApiKeysCount > 0, but as a safeguard:
+      throw new Error("Không thể lấy API Key hiện tại. Vui lòng kiểm tra Cài đặt.");
     }
 
     const ai = new GoogleGenAI({ apiKey }); // Initialize GoogleGenAI with the current API key
@@ -100,5 +106,5 @@ export const generateCinematicPrompt = async (
   }
 
   // If all keys were tried and failed
-  throw new Error(`Đã thử tất cả ${totalApiKeysCount} API Key và đều thất bại. Lỗi cuối cùng: ${lastError?.message || "Không xác định"}. Vui lòng kiểm tra lại cấu hình process.env.API_KEY của bạn.`);
+  throw new Error(`Đã thử tất cả ${totalApiKeysCount} API Key và đều thất bại. Lỗi cuối cùng: ${lastError?.message || "Không xác định"}. Vui lòng kiểm tra lại các API key trong phần Cài đặt.`);
 };

@@ -1,23 +1,28 @@
-import React, { useState } from 'react';
-import { X, KeyRound, Info, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, KeyRound, Save } from 'lucide-react';
+import { usePromptStore } from '../store';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  totalKeys: number;
-  currentIndex: number;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, totalKeys, currentIndex }) => {
-  const [copied, setCopied] = useState(false);
-  const exampleText = 'API_KEY=key_cua_ban_1,key_cua_ban_2,key_cua_ban_3';
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+  const { availableApiKeys, currentApiKeyIndex, setApiKeys } = usePromptStore();
+  const [localKeys, setLocalKeys] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      // Load keys from store into local state when modal opens
+      setLocalKeys(availableApiKeys.join('\n'));
+    }
+  }, [isOpen, availableApiKeys]);
 
   if (!isOpen) return null;
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(exampleText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleSave = () => {
+    setApiKeys(localKeys);
+    onClose();
   };
 
   return (
@@ -26,7 +31,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
       onClick={onClose}
     >
       <div 
-        className="bg-cinema-800 border border-cinema-700 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-md m-auto flex flex-col animate-fade-in-up"
+        className="bg-cinema-800 border border-cinema-700 rounded-2xl shadow-2xl shadow-black/50 w-full max-w-lg m-auto flex flex-col animate-fade-in-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -41,67 +46,55 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, t
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
           
           {/* Status Section */}
           <div className="space-y-3">
              <h3 className="text-sm font-medium text-gray-400">Trạng thái hiện tại</h3>
              <div className="bg-cinema-900/50 border border-cinema-700 rounded-lg p-4 flex justify-around text-center">
                 <div>
-                  <p className="text-2xl font-bold text-white">{totalKeys}</p>
-                  <p className="text-xs text-gray-500">Key đã tải</p>
+                  <p className="text-2xl font-bold text-white">{availableApiKeys.length}</p>
+                  <p className="text-xs text-gray-500">Key đã lưu</p>
                 </div>
                 <div className="w-px bg-cinema-700"></div>
                  <div>
-                  <p className={`text-2xl font-bold ${totalKeys > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {totalKeys > 0 ? `#${currentIndex + 1}` : 'N/A'}
+                  <p className={`text-2xl font-bold ${availableApiKeys.length > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {availableApiKeys.length > 0 ? `#${currentApiKeyIndex + 1}` : 'N/A'}
                   </p>
                   <p className="text-xs text-gray-500">Key đang dùng</p>
                 </div>
              </div>
           </div>
 
-          {/* Instructions Section */}
+          {/* Input Section */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-gray-400">Cách cấu hình</h3>
-            <div className="bg-blue-950/30 border border-blue-800/50 rounded-lg p-4 text-sm text-blue-200/90 space-y-3">
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-400" />
-                <p>
-                  Ứng dụng này lấy API key từ một biến môi trường tên là <code className="bg-black/50 px-1 py-0.5 rounded text-white font-mono text-xs">process.env.API_KEY</code>. 
-                  <strong>Bạn không thể nhập key trực tiếp tại đây.</strong>
-                </p>
-              </div>
-               <p>Để sử dụng nhiều key, hãy thêm chúng vào biến môi trường, phân tách bằng dấu phẩy.</p>
-            </div>
-          </div>
-          
-          {/* Example Section */}
-           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-gray-400">Ví dụ</h3>
-            <div className="flex items-center gap-2 bg-black/50 border border-cinema-600 rounded-lg p-3">
-              <code className="flex-1 text-gray-300 font-mono text-xs overflow-x-auto">{exampleText}</code>
-              <button
-                onClick={handleCopy}
-                className={`flex items-center gap-1.5 p-1.5 rounded-md text-xs font-medium transition-colors ${
-                  copied 
-                  ? 'bg-green-900/30 text-green-400' 
-                  : 'bg-cinema-700 hover:bg-cinema-600 text-gray-300'
-                }`}
-              >
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              </button>
-            </div>
+            <h3 className="text-sm font-medium text-gray-400">Danh sách API Key</h3>
+            <p className="text-xs text-gray-500">
+              Dán các API key của bạn vào đây, mỗi key một dòng. Ứng dụng sẽ tự động sử dụng key tiếp theo nếu key hiện tại hết hạn mức.
+            </p>
+            <textarea
+              value={localKeys}
+              onChange={(e) => setLocalKeys(e.target.value)}
+              placeholder="AIzaSy... (dòng 1)&#10;AIzaSy... (dòng 2)&#10;..."
+              className="w-full h-40 bg-black/50 border border-cinema-600 rounded-lg p-3 text-sm font-mono text-gray-300 resize-y focus:outline-none focus:ring-2 focus:ring-cinema-accent/50"
+            />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 bg-cinema-900/50 border-t border-cinema-700 text-right">
+        <div className="px-6 py-3 bg-cinema-900/50 border-t border-cinema-700 flex justify-end items-center gap-4">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-cinema-accent hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
+              className="px-4 py-2 text-gray-300 hover:bg-cinema-700 text-sm font-semibold rounded-lg transition-colors"
             >
-              Đã hiểu
+              Hủy
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 px-4 py-2 bg-cinema-accent hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              Lưu API Keys
             </button>
         </div>
       </div>
